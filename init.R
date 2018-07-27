@@ -14,7 +14,7 @@ bad.runs = inner_join(bad.runs, machines)
 bad.runs = bad.runs %>%
   mutate(
     end.month = factor(substr(end.date,1,7)),
-    end.date = factor(substr(end.date,1,10)),
+    end.dom = factor(substr(end.date,1,10)),
     end.day = factor(substr(end.date,9,10)),
     end.hour = factor(substr(end.date,12,13)),
     end.wday = factor(wday(end.date, label=T))

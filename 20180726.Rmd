@@ -3,15 +3,19 @@ title: "July 2018 Metrics as of 26th"
 author: "Jeff Anderson"
 date: "July 27, 2018"
 output:
-  html_document: default
-  pdf_document: default
   word_document: default
+  pdf_document: default
+  html_document: default
 ---
 
-```{r}
+```{r message=FALSE, echo=FALSE }
+options(max.print = 400, warn=-1)
+
 library(dplyr)
 library(lubridate)
 library(ggplot2)
+
+
 
 machines = read.table("agents.csv", sep=",")
 colnames(machines) = c("machine", "opsys")
@@ -25,7 +29,7 @@ bad.runs = inner_join(bad.runs, machines)
 bad.runs = bad.runs %>%
   mutate(
     end.month = factor(substr(end.date,1,7)),
-    end.date = factor(substr(end.date,1,10)),
+    end.dom = factor(substr(end.date,1,10)),
     end.day = factor(substr(end.date,9,10)),
     end.hour = factor(substr(end.date,12,13)),
     end.wday = factor(wday(end.date, label=T))
@@ -39,7 +43,20 @@ mon.fails = fail.runs %>%
 
 prior.fails = mon.fails %>%
   filter(end.day == '26')
-  
+
+fails.job = mon.fails %>%
+  select(job.name) %>%
+  group_by(job.name) %>%
+  summarize(total.fails = n()) %>%
+  filter(total.fails > 10) %>%
+  arrange(desc(total.fails))
+
+prior.fails.job = prior.fails %>%
+  select(job.name) %>%
+  group_by(job.name) %>%
+  summarize(total.fails = n()) %>%
+  arrange(desc(total.fails))
+
 fails.machine = mon.fails %>%
   select(machine) %>%
   group_by(machine) %>%
@@ -80,8 +97,8 @@ fails.group = mon.fails %>%
   arrange(desc(total.fails))
 
 fails.group.day = mon.fails %>%
-  select(end.date, job.group) %>%
-  group_by(end.date, job.group) %>%
+  select(end.dom, job.group) %>%
+  group_by(end.dom, job.group) %>%
   summarize(total.fails = n()) %>%
   filter(total.fails > 10) %>%
   arrange(desc(total.fails))
@@ -90,29 +107,108 @@ fails.pior.group = prior.fails %>%
   select(job.group) %>%
   group_by(job.group) %>%
   summarize(total.fails = n()) %>%
+  filter(total.fails > 2) %>%
   arrange(desc(total.fails))
 ```
 
-# Autosys Monthly Failure Summaries to Date
+# ****************************
+# Month to Date Failure Info
+# ****************************
+
+# Job Failure Counts by Job
+
+```{r echo=FALSE}
+print(fails.job)
+```
 
 ## Total Failures by Job Group
 
-
-```{r}
+```{r echo=FALSE}
 group.monthly.totals = ggplot(fails.group, aes(job.group, total.fails, fill=job.group))+
   geom_col()+
   theme(axis.text.x=element_text(angle = -90, hjust = 0))+
-  labs(title="Montly Totals Per Group")
+  labs(title="Monthly Totals Per Group")
 print(group.monthly.totals)
 ```
 
 ## Failures by Day by Group
 
-```{r}
+```{r echo=FALSE}
 daily.totals.by.group = 
-  ggplot(fails.group.day, aes(end.date, total.fails, fill=job.group))+
+  ggplot(fails.group.day, aes(end.dom, total.fails, fill=job.group))+
   geom_col()+
   theme(axis.text.x=element_text(angle = -90, hjust = 0))+
   labs(title="Daily Totals Per Group")
 print(daily.totals.by.group)
+```
+
+## Failures by Machine
+
+```{r echo=FALSE}
+totals.by.machine = 
+  ggplot(fails.machine, aes(machine, total.fails, fill=machine))+
+  geom_col()+
+  theme(axis.text.x=element_text(angle = -90, hjust = 0))+
+  labs(title="Failures By Machine")
+print(totals.by.machine)
+```
+
+
+## Failures by Exit Code
+
+```{r echo=FALSE}
+print(fails.code)
+```
+
+## Total Failures by Operating System
+
+```{r echo=FALSE}
+opsys.totals = ggplot(fails.opsys, aes(opsys, total.fails, fill=opsys))+
+  geom_col()+
+  theme(axis.text.x=element_text(angle = -90, hjust = 0))+
+  labs(title="Monthly Totals Per OpSys")
+print(opsys.totals)
+```
+
+## Total Failures by Hour of Day
+
+```{r echo=FALSE}
+hourly.totals = ggplot(fails.hour, aes(end.hour, total.fails, fill=end.hour))+
+  geom_col()+
+  theme(axis.text.x=element_text(angle = -90, hjust = 0))+
+  labs(title="Monthly Totals Per Hour of Day")
+print(hourly.totals)
+```
+
+## Total Failures by Day of Week / Hour
+
+```{r echo=FALSE}
+wday.hour.totals = ggplot(fails.wday.hour, aes(end.wday, total.fails, fill=end.hour))+
+  geom_col()+
+  theme(axis.text.x=element_text(angle = -90, hjust = 0))+
+  labs(title="Monthly Totals Per Day / Hour")
+print(wday.hour.totals)
+```
+
+
+# ****************************
+# Yesterday Information
+# ****************************
+
+## Yesterday Failures by Job
+
+```{r echo=FALSE}
+print(prior.fails.job)
+```
+
+## Yesterday Failures by Group
+
+```{r echo=FALSE}
+prior.totals.by.group = 
+  ggplot(fails.pior.group, aes(job.group, total.fails, fill=job.group))+
+  geom_col()+
+  theme(axis.text.x=element_text(angle = -90, hjust = 0))+
+  labs(title="Prior Day Failure Totals Per Group")
+print(prior.totals.by.group)
+
 ```
