@@ -23,13 +23,14 @@ END_TIME || ',' ||
 '"' || TO_CHAR(END_DATE, 'YYYY-MM-DD HH24:MI:SS') || '",' ||
 RUNTIME || ',' ||
 '"' || END_STATUSTXT || '",' ||
-EXIT_CODE || ',' || 
+'"' || EXIT_CODE || '",' || 
 '"' || REFERENCE || '",' ||
 '"' || TO_CHAR(PROC_DATE, 'YYYY-MM-DD') || '"' RUN_INFO
 FROM REP_ASYS_JOB_RUNS
-WHERE PROC_DATE >= SYSDATE - 60
+WHERE PROC_DATE >= SYSDATE - 365
 AND END_STATUS IN (5,6)
 AND JOB_TYPE = 'c'
+AND ACTIVE = 1
 AND REFERENCE LIKE 'INC%'
 ;
 
